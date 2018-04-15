@@ -110,7 +110,7 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 	private int defaultSatIndex;
 	private static List<SatPassTime> passes = new ArrayList<SatPassTime>();
 	private String passHeader;
-	private ArrayAdapter<SatPassTime> passAdapter;
+	private PassRowListAdapter passAdapter;
 	// Used by location methods
 	private Boolean trackingLocation = false;
 	private final LocationListener locationListener = new UserLocationListener();
@@ -400,7 +400,8 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 	}
 
 	public void bindPassView() {
-		passAdapter = new ArrayAdapter<SatPassTime>(context, R.layout.pass_row, passes);
+		passAdapter = new PassRowListAdapter(context, (ArrayList)passes, null);
+
 		((ListView)findViewById(R.id.PASS_LIST_VIEW)).setAdapter(passAdapter);
 		((ListView)findViewById(R.id.PASS_LIST_VIEW)).setOnItemClickListener(new OnItemClickListener() {
 			@Override

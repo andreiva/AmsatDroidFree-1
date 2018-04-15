@@ -58,7 +58,7 @@ public class SatPassTime implements Serializable {
 	private static final String DEG_NL = "\u00B0\n";
 
 	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm", Locale.ENGLISH);
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM dd, yyyy", Locale.ENGLISH);
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH);
 
 	public SatPassTime(final Date startTime, final Date endTime, final String polePassed, final int aos, final int los,
 			final double maxEl) {
@@ -71,8 +71,8 @@ public class SatPassTime implements Serializable {
 	public SatPassTime(final Date startTime, final Date endTime, final Date tca, final String polePassed, final int aosAzimuth,
 			final int losAzimuth, final double maxEl) {
 		// TODO Auto-generated constructor stub
-		this.startTime = new Date(startTime.getTime());
-		this.endTime = new Date(endTime.getTime());
+		this.startTime = startTime;
+		this.endTime = endTime;
 		this.polePassed = polePassed;
 		this.aos = aosAzimuth;
 		this.los = losAzimuth;
@@ -82,6 +82,32 @@ public class SatPassTime implements Serializable {
 
 	public final Date getStartTime() {
 		return new Date(startTime.getTime());
+	}
+
+	public String getFormattedStartTime() {
+		return TIME_FORMAT.format(startTime);
+	}
+
+	public String getFormattedDate() {
+
+		String date = "";
+		Date now = new Date();
+
+		if(startTime.getDate() == now.getDate())
+			return "Today";
+
+		if((startTime.getDate() - now.getDate()) == 1)
+			return "Tomorrow";
+
+		if((startTime.getDate() - now.getDate()) == -1)
+			return "Yesterday";
+
+		return DATE_FORMAT.format(startTime);
+	}
+
+	public String getFromattedDuration() {
+		final double duration = (endTime.getTime() - startTime.getTime()) / 60000.0;
+		return (int)duration +"min";
 	}
 
 	public final Date getEndTime() {
