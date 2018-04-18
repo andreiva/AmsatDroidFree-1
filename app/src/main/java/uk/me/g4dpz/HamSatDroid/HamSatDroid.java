@@ -65,11 +65,11 @@ import uk.me.g4dpz.satellite.TLE;
 public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final String PERIOD = ".";
 	/**
-	 * 
+	 *
 	 */
 	private static final String COMMA = ",";
 	private static final String WEATHER_CELESTRAK = "WEATHER_CELESTRAK";
@@ -293,6 +293,7 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 		final Spinner s = (Spinner)findViewById(R.id.SatelliteSelectorSpinner);
 		final ArrayAdapter<TLE> adapter = new ArrayAdapter<TLE>(context, android.R.layout.simple_spinner_item, allSatElems);
 		adapter.setDropDownViewResource(android.R.layout.simple_dropdown_item_1line);
+		adapter.sort((t1, t2) -> t1.getName().compareToIgnoreCase(t2.getName()));
 		s.setAdapter(adapter);
 	}
 
@@ -1025,7 +1026,7 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 	/**
 	 * @return
-	 * 
+	 *
 	 */
 	public static List<SatPassTime> getPasses() {
 		return HamSatDroid.passes;
