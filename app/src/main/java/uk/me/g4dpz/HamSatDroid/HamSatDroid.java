@@ -1,6 +1,7 @@
 package uk.me.g4dpz.HamSatDroid;
 
 import android.app.AlertDialog;
+import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -19,6 +20,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,6 +40,15 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.mikepenz.fontawesome_typeface_library.FontAwesome;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.ExpandableBadgeDrawerItem;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
+import com.mikepenz.materialdrawer.model.SectionDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -52,6 +63,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import uk.me.g4dpz.HamSatDroid.utils.IaruLocator;
 import uk.me.g4dpz.satellite.GroundStationPosition;
 import uk.me.g4dpz.satellite.InvalidTleException;
@@ -64,13 +78,7 @@ import uk.me.g4dpz.satellite.TLE;
 
 public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
-	/**
-	 *
-	 */
 	private static final String PERIOD = ".";
-	/**
-	 *
-	 */
 	private static final String COMMA = ",";
 	private static final String WEATHER_CELESTRAK = "WEATHER_CELESTRAK";
 	private static final String CUBESAT_CELESTRAK = "CUBESAT_CELESTRAK";
@@ -110,7 +118,9 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 	private int defaultSatIndex;
 	private static List<SatPassTime> passes = new ArrayList<SatPassTime>();
 	private String passHeader;
+	private boolean noPassesFound = false;
 	private PassRowListAdapter passAdapter;
+	private SatListAdapter satAdapter;
 	// Used by location methods
 	private Boolean trackingLocation = false;
 	private final LocationListener locationListener = new UserLocationListener();
@@ -141,28 +151,149 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 	private static String kepsSource;
 
+	private Drawer drawer;
+
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setTheme(R.style.FullscreenTheme);
+		setContentView(R.layout.pass_screen);
+		context = this;
 
 		gestureScanner = new GestureDetector(this);
 
-		// Load layout from XML
-		setContentView(R.layout.pass_screen);
+
+		// Handle Toolbar
+		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(toolbar);
+		getSupportActionBar().setTitle(R.string.app_name);
+
+		drawer = new DrawerBuilder()
+				.withActivity(this)
+//				.withRootView(R.id.drawer_layout)
+//				.withDrawerLayout(R.layout.drawer_layout)
+				.withTranslucentNavigationBar(true)
+				.withTranslucentStatusBar(false)
+//				.withDrawerGravity(Gravity.TOP)
+				.withToolbar(toolbar)
+				.withDisplayBelowStatusBar(true)
+				.withActionBarDrawerToggleAnimated(true)
+				.addDrawerItems(
+						new PrimaryDrawerItem().withName("About").withIcon(FontAwesome.Icon.faw_info).withIdentifier(1),
+						new PrimaryDrawerItem().withName("Help").withIcon(FontAwesome.Icon.faw_question).withIdentifier(2),
+						new SectionDrawerItem(),
+						new ExpandableBadgeDrawerItem().withName(R.string.SetHomeLocation).withIcon(FontAwesome.Icon.faw_home).withIdentifier(18).withSelectable(false).withSubItems(
+								new SecondaryDrawerItem().withName(R.string.GetGPSLocation).withLevel(2).withIcon(FontAwesome.Icon.faw_crosshairs).withIdentifier(201),
+								new SecondaryDrawerItem().withName(R.string.GetNetworkLocation).withLevel(2).withIcon(FontAwesome.Icon.faw_wifi).withIdentifier(202),
+								new SecondaryDrawerItem().withName(R.string.EnterLocation).withLevel(2).withIcon(FontAwesome.Icon.faw_pencil_alt).withIdentifier(203)),
+						new ExpandableBadgeDrawerItem().withName(R.string.Load).withIcon(FontAwesome.Icon.faw_database).withIdentifier(18).withSelectable(false).withSubItems(
+								new SecondaryDrawerItem().withName(R.string.DownloadAmateurAmsatElem).withLevel(2).withIcon(FontAwesome.Icon.faw_circle).withIdentifier(301),
+								new SecondaryDrawerItem().withName(R.string.DownloadAmateurCelestrakElem).withLevel(2).withIcon(FontAwesome.Icon.faw_circle).withIdentifier(302),
+								new SecondaryDrawerItem().withName(R.string.DownloadCubesatCelestrakElem).withLevel(2).withIcon(FontAwesome.Icon.faw_circle).withIdentifier(303),
+								new SecondaryDrawerItem().withName(R.string.DownloadWeatherCelestrakElem).withLevel(2).withIcon(FontAwesome.Icon.faw_circle).withIdentifier(304),
+								new SecondaryDrawerItem().withName(R.string.DownloadResourcesCelestrakElem).withLevel(2).withIcon(FontAwesome.Icon.faw_circle).withIdentifier(305),
+								new SecondaryDrawerItem().withName(R.string.DownloadNewCelestrakElem).withLevel(2).withIcon(FontAwesome.Icon.faw_circle).withIdentifier(306)
+						),
+						new PrimaryDrawerItem().withName("Map View").withIcon(FontAwesome.Icon.faw_globe).withIdentifier(3)
+
+						)
+				.withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+					@Override
+					public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+
+
+						if (drawerItem != null && drawerItem.getIdentifier() == 1) {
+							try {
+								new AlertDialog.Builder(context)
+										.setMessage(
+												"Version " + context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName
+														+ "\n\n" + getString(R.string.AboutString)).setPositiveButton("Dismiss", null).show();
+							}
+							catch (final NameNotFoundException e) {
+								e.printStackTrace();
+							}
+							return true;
+						}
+
+						if (drawerItem != null && drawerItem.getIdentifier() == 201) {
+
+
+							Fragment fragment = null;
+//							SatelliteListActivity fragment = new SatelliteListActivity();
+							try {
+
+								fragment = (Fragment) SatelliteListActivity.class.newInstance();
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+
+
+							FragmentManager fragmentManager = getSupportFragmentManager();
+							fragmentManager.beginTransaction().replace(R.id.flContent, fragment).commit();
+
+							drawer.closeDrawer();
+
+//							setLocationPreference(LocationManager.GPS_PROVIDER);
+							return true;
+						}
+
+						if (drawerItem != null && drawerItem.getIdentifier() == 202) {
+							setLocationPreference(LocationManager.NETWORK_PROVIDER);
+							return true;
+						}
+
+						if (drawerItem != null && drawerItem.getIdentifier() == 203) {
+							final Intent launchPreferencesIntent = new Intent().setClass(context, PrefHandling.class);
+							startActivity(launchPreferencesIntent);
+							return true;
+						}
+
+
+						// Keeps
+						if (drawerItem != null && drawerItem.getIdentifier() == 301) {
+							setKepsSource(AMATEUR_AMSAT);
+							updateKepsTask = new LoadElemNetTask();
+							updateKepsTask.execute(0);
+							return true;
+						}
+
+						if (drawerItem != null && drawerItem.getIdentifier() == 301) {
+							setKepsSource(AMATEUR_AMSAT);
+							updateKepsTask = new LoadElemNetTask();
+							updateKepsTask.execute(0);
+							return true;
+						}
+
+						if (drawerItem != null && drawerItem.getIdentifier() == 3) {
+							launchGroundView();
+							return true;
+						}
+
+
+						return false;
+					}
+				}).build();
+
+
+
 
 		// Save context for later
-		context = this;
-
 		// Set default preferences
 		PreferenceManager.setDefaultValues(this, R.xml.preference_root, false);
 
-		// Initialise passes header text view
-		if (passHeader != null) {
-			((TextView)findViewById(R.id.latlon_view)).setText(passHeader);
-		}
-		else {
-			((TextView)findViewById(R.id.latlon_view)).setText("");
-		}
+		Spinner satSelector = (Spinner)findViewById(R.id.SatelliteSelectorSpinner);
+		satSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+				new CalcPassTask().execute(48);
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parentView) {
+				String asd = "asd";
+			}
+
+		});
 
 		// Get saved element data from binary file
 		restoreElemFromFile();
@@ -186,26 +317,6 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 		// Create passes adapter and bind it to ListView
 		bindPassView();
 
-		// Set passes calc button callback
-		((Button)findViewById(R.id.CalculatePassButton)).setOnClickListener(new Button.OnClickListener() {
-			@Override
-			public void onClick(final View v) {
-				final String selectedTime = (String)((Spinner)findViewById(R.id.TimeSelectorSpinner)).getSelectedItem();
-				if (selectedTime.equals("Next Pass Only")) {
-					new CalcPassTask().execute(0);
-				}
-				else if (selectedTime.equals("6 hours")) {
-					new CalcPassTask().execute(6);
-				}
-				else if (selectedTime.equals("12 hours")) {
-					new CalcPassTask().execute(12);
-				}
-				else if (selectedTime.equals("24 hours")) {
-					new CalcPassTask().execute(24);
-				}
-			}
-		});
-
 		timeDisplay = (TextView)findViewById(R.id.StartTime);
 		// startTimeCalendar = Calendar.getInstance();
 
@@ -222,6 +333,8 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 					final TimePicker timePicker = (TimePicker)startTimeDialogLayout.findViewById(R.id.TimePicker01);
 					timePicker.setCurrentHour(startTimeCalendar.getTime().getHours());
 					timePicker.setCurrentMinute(startTimeCalendar.getTime().getMinutes());
+					timePicker.setIs24HourView(true);
+
 					datePicker.updateDate(startTimeCalendar.get(Calendar.YEAR), startTimeCalendar.get(Calendar.MONTH),
 							startTimeCalendar.get(Calendar.DAY_OF_MONTH));
 				}
@@ -289,6 +402,22 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 	}
 
 	private void bindSatList() {
+
+		passAdapter = new PassRowListAdapter(context, (ArrayList)passes, null);
+
+		((ListView)findViewById(R.id.PASS_LIST_VIEW)).setAdapter(passAdapter);
+		((ListView)findViewById(R.id.PASS_LIST_VIEW)).setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(final AdapterView<?> parent, final View view, final int position, final long id) {
+				// Get selected passes and start SkyView
+				HamSatDroid.setSelectedPass((SatPassTime)parent.getItemAtPosition(position));
+				final Intent launchSkyViewIntent = new Intent().setClass(context, SkyView.class);
+				startActivity(launchSkyViewIntent);
+			}
+		});
+
+
+
 		// Initialise Satellite List
 		final Spinner s = (Spinner)findViewById(R.id.SatelliteSelectorSpinner);
 		final ArrayAdapter<TLE> adapter = new ArrayAdapter<TLE>(context, android.R.layout.simple_spinner_item, allSatElems);
@@ -304,16 +433,10 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 		final SharedPreferences prefs = getPreferences(0);
 
 		// Restore spinner selections
-		final int satIndex = prefs.getInt(SELECTED_SAT_INDEX, defaultSatIndex);
+		final int satIndex = prefs.getInt(SELECTED_SAT_INDEX, 0);
 		final int timeIndex = prefs.getInt(SELECTED_PASS_TIME, 0);
 		((Spinner)findViewById(R.id.SatelliteSelectorSpinner)).setSelection(satIndex);
-		((Spinner)findViewById(R.id.TimeSelectorSpinner)).setSelection(timeIndex);
-
-		// Restore passes header
-		final String restoredText = prefs.getString(PASS_HEADER, null);
-		if (restoredText != null) {
-			((TextView)findViewById(R.id.latlon_view)).setText(restoredText);
-		}
+//		((Spinner)findViewById(R.id.TimeSelectorSpinner)).setSelection(timeIndex);
 
 		// Retrieve passes
 		restorePassesFromFile();
@@ -326,8 +449,8 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 		final SharedPreferences.Editor editor = getPreferences(0).edit();
 
 		// Save spinner selections
-		editor.putInt(SELECTED_SAT_INDEX, ((Spinner)findViewById(R.id.SatelliteSelectorSpinner)).getSelectedItemPosition());
-		editor.putInt(SELECTED_PASS_TIME, ((Spinner)findViewById(R.id.TimeSelectorSpinner)).getSelectedItemPosition());
+		int index = ((Spinner)findViewById(R.id.SatelliteSelectorSpinner)).getSelectedItemPosition();
+		editor.putInt(SELECTED_SAT_INDEX, index);
 
 		try {
 			setObserver();
@@ -411,27 +534,6 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 				HamSatDroid.setSelectedPass((SatPassTime)parent.getItemAtPosition(position));
 				final Intent launchSkyViewIntent = new Intent().setClass(context, SkyView.class);
 				startActivity(launchSkyViewIntent);
-
-				// Uri uri = Uri.parse("content://calendar/events");
-				// ContentResolver cr = context.getContentResolver();
-				// ContentValues values = new ContentValues();
-				// values.put("eventTimezone", "EST");
-				// values.put("calendarId", 1); // query
-				// content://calendar/calendars for
-				// more
-				// values.put("title", "Sat Pass");
-				// values.put("allDay", 0);
-				// values.put("dtstart", dtstart); // long (start date
-				// in ms)
-				// values.put("dtend", dtend); // long (end date in ms)
-				// values.put("description",
-				// "Bring computers and alcohol");
-				// values.put("eventLocation", "ZA WARULDO");
-				// values.put("transparency", 0);
-				// values.put("visibility", 0);
-				// values.put("hasAlarm", 0);
-				// cr.insert(uri, values);
-
 			}
 		});
 	}
@@ -459,22 +561,33 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 		// Calculate next satellite passes
 		try {
-
 			myelem = setSatellite();
 
 			HamSatDroid.setPassPredictor(new PassPredictor(myelem, HamSatDroid.getGroundStation()));
 
 			HamSatDroid.setPasses(getPassPredictor().getPasses(myCal.getTime(), hoursAhead, true));
+
+			noPassesFound = false;
 		}
 		catch (final InvalidTleException e) {
 			passHeader = "ERROR: Bad Keplerian Elements";
+			passAdapter.clear();
+			return;
 		}
 		catch (final SatNotFoundException e) {
-			passHeader = "ERROR: Unknown Satellite";
+			passHeader = e.getMessage();
+			passAdapter.clear();
+			noPassesFound = true;
+			return;
 		}
+		catch (final IllegalArgumentException e) {
+			passHeader = e.getMessage();
+			passAdapter.clear();
+			return;
+		}
+		passHeader = "";
 
-		// setPass(mysat.calcPass(dayGHAAref, dayGHAAref + (hoursAhead / 24.0),
-		// (calcRange / 24.0), homeLat, homeLong));
+
 		final NumberFormat formatter = NumberFormat.getNumberInstance();
 		formatter.setMaximumFractionDigits(4);
 
@@ -483,26 +596,12 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 		final IaruLocator locator = new IaruLocator(homeLat, homeLong);
 
-		if (passes.get(0).getMaxEl() == 0) {
-			passHeader = "No passes found for satellite " + myelem.getName() + FOR_HOME_COORDINATES_LAT_LON_GRIDSQUARE
-					+ formatter.format(homeLat) + SLASH + formatter.format(homeLong) + SLASH + locator.toMaidenhead()
-					+ " for the next " + calcRange + " hours.\n";
+		if (passes.isEmpty()) {
+			passHeader = "Coffee & bunns";
 		}
 		else {
-			if (hoursAhead == 0) {
-				passHeader = PASS_PREDICTIONS_FOR_SATELLITE + myelem.getName() + FOR_HOME_COORDINATES_LAT_LON_GRIDSQUARE
-						+ formatter.format(homeLat) + SLASH + formatter.format(homeLong) + SLASH + locator.toMaidenhead()
-						+ FOR_THE_NEXT + "passes only" + ", starting "
-						+ DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT).format(myCal.getTime()) + COLON_NL;
-			}
-			else {
-				passHeader = PASS_PREDICTIONS_FOR_SATELLITE + myelem.getName() + FOR_HOME_COORDINATES_LAT_LON_GRIDSQUARE
-						+ formatter.format(homeLat) + SLASH + formatter.format(homeLong) + SLASH + locator.toMaidenhead()
-						+ FOR_THE_NEXT + hoursAhead + " hours, starting "
-						+ DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT).format(myCal.getTime()) + COLON_NL;
-			}
+			passHeader = "";
 		}
-
 	}
 
 	/**
@@ -626,9 +725,14 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 		@Override
 		protected void onPostExecute(final Long result) {
-			((ProgressBar)findViewById(R.id.PassProgressBar)).setVisibility(View.INVISIBLE);
+			((ProgressBar)findViewById(R.id.PassProgressBar)).setVisibility(View.GONE);
 			bindPassView();
-			((TextView)findViewById(R.id.latlon_view)).setText(passHeader);
+
+			if(noPassesFound) {
+				Toast toast = Toast.makeText(context, "No visible passes at your location", Toast.LENGTH_LONG);
+				toast.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL, 0, 0);
+				toast.show();
+			}
 		}
 
 		@Override
@@ -776,6 +880,9 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 			if (result) {
 				saveElemToFile();
 				bindSatList();
+
+				drawer.closeDrawer();
+
 				Toast.makeText(context, KEPS_UPDATED, Toast.LENGTH_LONG).show();
 			}
 			else {
@@ -916,7 +1023,7 @@ public class HamSatDroid extends ASDActivity implements OnGestureListener {
 
 	@Override
 	public boolean onFling(final MotionEvent e1, final MotionEvent e2, final float velocityX, final float velocityY) {
-		if (e1.getX() - e2.getX() > SWIPE_MINDISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+		if (e1.getX() - e2.getX() > SWIPE_MINDISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY && !noPassesFound) {
 			launchGroundView();
 		}
 		return true;

@@ -55,6 +55,7 @@ public class GroundView extends ASDActivity implements OnGestureListener {
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setTheme(R.style.FullscreenTheme);
 
 		mapBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.world);
 		satBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.saticon);

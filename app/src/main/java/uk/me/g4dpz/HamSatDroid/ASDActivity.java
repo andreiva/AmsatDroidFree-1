@@ -5,13 +5,14 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
+import androidx.appcompat.app.AppCompatActivity;
 import uk.me.g4dpz.satellite.GroundStationPosition;
 
 /**
  * @author g4dpz
  * 
  */
-abstract class ASDActivity extends Activity {
+abstract class ASDActivity extends AppCompatActivity {
 
 	private static final String ZERO_STRING = "0";
 	private static final String HOME_LON = "homeLon";
