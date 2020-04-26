@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
   xmlns:android="http://schemas.android.com/apk/res/android">
+
 	<item 
 		android:visible="true" 
 		android:enabled="true" 
@@ -15,6 +16,10 @@
 	<item android:title="@string/EnterLocation" 
 		android:id="@+id/MENU_ENTER_LOCATION">
 	</item>
+		<item
+			android:id="@+id/menu_refresh"
+			android:showAsAction="never"
+			android:title="REFERESH"/>
 </menu>
 </item>
 	<item 

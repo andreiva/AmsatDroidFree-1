@@ -138,10 +138,10 @@ public class SkyView extends ASDActivity implements SensorEventListener, OnGestu
 
 			float radius = 0;
 			if (skyWidth < skyHeight) {
-				radius = skyWidth * 0.35f;
+				radius = skyWidth * 0.45f;
 			}
 			else {
-				radius = skyHeight * 0.35f;
+				radius = skyHeight * 0.45f;
 			}
 
 			final Matrix matrix = new Matrix();
@@ -217,6 +217,11 @@ public class SkyView extends ASDActivity implements SensorEventListener, OnGestu
 				writingPaint.setTextSize(fontSize / 2);
 				canvas.drawCircle(centerX + azelToX(pos.getAzimuth(), pos.getElevation(), radius),
 						centerY - azelToY(pos.getAzimuth(), pos.getElevation(), radius), radius / 25f, solidPaint);
+
+				writingPaint.setColor(Color.WHITE);
+				writingPaint.setTextSize(fontSize);
+				canvas.drawText((int)(pos.getElevation()*100)+"°", centerX + azelToX(pos.getAzimuth(), pos.getElevation(), radius),
+						centerY - azelToY(pos.getAzimuth(), pos.getElevation(), radius), writingPaint);
 			}
 
 			argCanvas.drawBitmap(bitmap, getLeft(), getTop(), null);

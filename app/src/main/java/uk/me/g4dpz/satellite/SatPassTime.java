@@ -94,13 +94,13 @@ public class SatPassTime implements Serializable {
 		Date now = new Date();
 
 		if(startTime.getDate() == now.getDate())
-			return "Today";
+			return "Tdy";
 
 		if((startTime.getDate() - now.getDate()) == 1)
-			return "Tomorrow";
+			return "Tmr";
 
 		if((startTime.getDate() - now.getDate()) == -1)
-			return "Yesterday";
+			return "Ydy";
 
 		return DATE_FORMAT.format(startTime);
 	}
@@ -108,6 +108,15 @@ public class SatPassTime implements Serializable {
 	public String getFromattedDuration() {
 		final double duration = (endTime.getTime() - startTime.getTime()) / 60000.0;
 		return (int)duration +"min";
+	}
+
+	public String getTeeMinus() {
+		Date now = new Date();
+		double time = ((startTime.getTime() - now.getTime()) / 60000.0);
+		int minutes = (int)(time % 60);
+		int hours = (int)Math.floor(time / 60);
+
+		return (minutes > 0 ? "-" : "+") + (hours > 0 ? hours+"h" : "") + Math.abs(minutes) +"m";
 	}
 
 	public final Date getEndTime() {

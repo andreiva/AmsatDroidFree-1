@@ -2,19 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/LinearLayout1"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:weightSum="4">
+    android:layout_height="wrap_content">
 
     <TextView
         android:id="@+id/date"
-        android:text="Today"
+        android:text="Tdy"
         android:layout_width="0dip"
         android:layout_height="match_parent"
-        android:layout_weight="1.2"
+        android:layout_weight="0.8"
         android:padding="10dip"
         android:gravity="start"
-        android:textAlignment="gravity"
         android:textSize="16dip" />
 
     <TextView
@@ -22,10 +19,9 @@
         android:text="17:05"
         android:layout_width="0dip"
         android:layout_height="match_parent"
-        android:layout_weight="0.8"
+        android:layout_weight="1"
         android:padding="10dip"
         android:gravity="center_horizontal"
-        android:textAlignment="gravity"
         android:textSize="20sp" />
 
     <TextView
@@ -33,10 +29,9 @@
         android:text="15min"
         android:layout_width="0dip"
         android:layout_height="match_parent"
-        android:layout_weight="1"
+        android:layout_weight="1.2"
         android:padding="10dip"
         android:gravity="center_horizontal"
-        android:textAlignment="gravity"
         android:textSize="20sp" />
 
     <TextView
@@ -44,10 +39,9 @@
         android:text="86°"
         android:layout_width="0dip"
         android:layout_height="match_parent"
-        android:layout_weight="1"
+        android:layout_weight="0.9"
         android:padding="10dip"
         android:gravity="end"
-        android:textAlignment="gravity"
         android:textColor="#005405"
         android:textSize="20sp"
         android:textStyle="bold" />

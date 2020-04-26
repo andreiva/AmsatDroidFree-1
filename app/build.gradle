@@ -1,8 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 15
-    buildToolsVersion "26.0.2"
+    compileSdkVersion 21
 
     defaultConfig {
         applicationId "uk.me.g4dpz.HamSatDroid"

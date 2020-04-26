@@ -37,6 +37,8 @@
  */
 package uk.me.g4dpz.satellite;
 
+import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
